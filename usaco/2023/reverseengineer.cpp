@@ -58,5 +58,4 @@ int main() {
     }
     std::cout << (good ? "OK\n" : "LIE\n");
   }
-
 }
