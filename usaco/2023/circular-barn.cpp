@@ -7,6 +7,11 @@ int main() {
     int n; std::cin >> n;
     std::vector<int> a(n);
     for (int i = 0; i < n; ++i) std::cin >> a[i];
-    std::vector
+    std::vector<int> required_move(n);
+    for (int i = 0; i < n; ++i) {
+      if (a[i] % 4 == 0) {
+        required_move[i] = 
+      }
+    }
   }
 }
