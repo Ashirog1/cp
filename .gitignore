@@ -2,3 +2,6 @@
 
 *.txt
 *.out
+*.sh
+
+tutor/*

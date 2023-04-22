@@ -2,49 +2,16 @@
 
 struct DSU {
   std::vector<int> p, deg;
-  using pq_type = std::pair<int, int>;
-  std::vector<
-      std::priority_queue<pq_type, std::vector<pq_type>, std::greater<pq_type>>>
-      min_deg;
   DSU(int n) {
     p.assign(n, -1);
-    deg.assign(n, 0);
-    min_deg.resize(n);
-    for (int i = 0; i < n; ++i) min_deg[i].emplace(0, i);
   }
   int find(int u) { return (p[u] < 0) ? u : find(p[u]); }
-  std::pair<int, int> get_min(int u) {
-    u = find(u);
-    while (not min_deg[u].empty()) {
-      auto [d, v] = min_deg[u].top();
-      /// std::cerr << d << ' ' << deg[v] << ' ' << v << '\n';
-      if (d != deg[v]) {
-        min_deg[u].pop();
-      } else {
-        return {d, v};
-      }
-    }
-    assert(false);
-    return {-1, -1};
-  }
-  void merge_min_deg(int u, int v) {
-    while (not min_deg[v].empty()) {
-      min_deg[u].emplace(get_min(v));
-      min_deg[v].pop();
-    }
-  }
   void merge(int u, int v) {
-    deg[u]++; deg[v]++;
     u = find(u); v = find(v);
-    min_deg[u].emplace(deg[u], u);
-    min_deg[u].emplace(deg[v], v);
-
     if (u == v) return;
-
     if (p[u] > p[v]) std::swap(u, v);
     p[u] += p[v];
     p[v] = u;
-    merge_min_deg(u, v);
   }
   int size(int u) { return -p[find(u)]; }
 };
@@ -56,21 +23,46 @@ int main() {
   std::cin >> n >> m;
   std::vector<std::pair<int, int>> edges(m);
   std::vector<int> deg(n);
+  std::vector<std::vector<int>> adj(n);
   for (auto &[u, v] : edges) {
     std::cin >> u >> v;
     --u; --v;
     deg[u]++; deg[v]++;
+    adj[u].emplace_back(v);
+    adj[v].emplace_back(u);
   }
-  std::sort(edges.rbegin(), edges.rend(), [&](auto e1, auto e2) {
-    return std::min(deg[e1.first], deg[e1.second]) <
-           std::min(deg[e2.first], deg[e2.second]);
-  });
+  std::vector<int> order;
+  std::set<std::pair<int, int>> set_deg;
+  std::vector<int> erased(n);
+  for (int i = 0; i < n; ++i) {
+    set_deg.insert({deg[i], i});
+  }
+  for (int i = 0; i < n; ++i) {
+    auto it = set_deg.begin(); set_deg.erase(it);
+    order.emplace_back(it->second);
+    erased[it->second] = true;
+    for (auto v : adj[it->second]) {
+      if (erased[v]) continue;;
+      set_deg.erase({deg[v], v});
+      deg[v]--;
+      set_deg.insert({deg[v], v});
+    }
+  }
+  std::fill(deg.begin(), deg.end(), 0);
+  std::reverse(order.begin(), order.end());
   int64_t ans = 0;
   DSU dsu(n);
-
-  for (const auto &[u, v] : edges) {
-    dsu.merge(u, v);
-    ans = std::max(ans, (int64_t)dsu.get_min(u).first * dsu.size(u));
+  std::vector<int> big(n);
+  for (auto u : order) {
+    big[u] = true;
+    for (auto v : adj[u]) {
+      if (big[v]) {
+        dsu.merge(u, v);
+        ++deg[u]; ++deg[v];
+      }
+    }
+    ans = std::max(ans, (int64_t)dsu.size(u) * deg[u]);
   }
-  std::cout << ans;
+
+  std::cout << ans << '\n';
 }
