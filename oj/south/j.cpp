@@ -1,0 +1,86 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * Complexity: O(Nlog(mod), N)
+ */
+#define IP Interpolation
+namespace Interpolation {
+
+const int mod = (int)1e9 + 7;
+const int maxn = 1e4 + 5;
+int a[maxn];
+int fac[maxn];
+int ifac[maxn];
+int prf[maxn];
+int suf[maxn];
+
+int fpow(int n, int k) {
+  int r = 1;
+  for (; k; k >>= 1) {
+    if (k & 1)
+      r = (long long)r * n % mod;
+    n = (long long)n * n % mod;
+  }
+  return r;
+}
+void upd(int u, int v) { a[u] = v; }
+void build() {
+  fac[0] = ifac[0] = 1;
+  for (int i = 1; i < maxn; i++) {
+    fac[i] = (long long)fac[i - 1] * i % mod;
+    ifac[i] = fpow(fac[i], mod - 2);
+  }
+}
+// Calculate P(x) of degree k - 1, k values form 1 to k
+// P(i) = a[i]
+int calc(int x, int k) {
+  prf[0] = suf[k + 1] = 1;
+  for (int i = 1; i <= k; i++) {
+    prf[i] = (long long)prf[i - 1] * (x - i + mod) % mod;
+  }
+  for (int i = k; i >= 1; i--) {
+    suf[i] = (long long)suf[i + 1] * (x - i + mod) % mod;
+  }
+  int res = 0;
+  for (int i = 1; i <= k; i++) {
+    if (!((k - i) & 1)) {
+      res = (res + (long long)prf[i - 1] * suf[i + 1] % mod * ifac[i - 1] % mod * ifac[k - i] % mod * a[i]) % mod;
+    } else {
+      res =
+          (res - (long long)prf[i - 1] * suf[i + 1] % mod * ifac[i - 1] % mod * ifac[k - i] % mod * a[i] % mod + mod) %
+          mod;
+    }
+  }
+  return res;
+}
+} // namespace Interpolation
+
+const int mod = (int)1e9 + 7;
+
+int main() {
+  IP::build();
+  int tc;
+  std::cin >> tc;
+
+  while (tc--) {
+    int64_t k, n, r;
+    std::cin >> k >> n >> r;
+
+    for (int i = 1; i < IP::maxn; ++i) {
+      IP::a[i] = (IP::a[i - 1] + 1ll * IP::fpow(i, k) * IP::fpow(r, i) % mod) % mod;
+    }
+
+    std::cout << IP::calc(n, 100) << '\n';
+
+    /// test
+    for (int i = 1; i < IP::maxn; ++i) {
+      std::cerr << i << '\n';
+      std::cerr << IP::calc(i, k + 66) << ' ' << IP::a[i] << '\n';
+      assert(IP::calc(i, k + 66) == IP::a[i]);
+    }
+  }
+  // assert(IP::calc(1234, 4) == IP::a[1234]);
+  cerr << "\nTime elapsed: " << 1000 * clock() / CLOCKS_PER_SEC << "ms\n";
+  return 0;
+}
